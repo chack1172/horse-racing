@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Corsa dei Cavalli</title>
+<style>
+/* ---------- Theme ---------- */
+:root {
+  --bg: #f4f1ea;
+  --surface: #fffdf8;
+  --text: #2a2620;
+  --muted: #7a7266;
+  --track: #c9a96b;
+  --track2: #d6ba82;
+  --line: #8a6d3b;
+  --accent: #1f7a4d;
+  --accent-text: #fff;
+  color-scheme: light;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17150f;
+    --surface: #221f17;
+    --text: #f1ece0;
+    --muted: #a39a88;
+    --track: #5b4a2a;
+    --track2: #65522f;
+    --line: #d9b872;
+    --accent: #3fbf80;
+    --accent-text: #0d1a12;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #17150f;
+  --surface: #221f17;
+  --text: #f1ece0;
+  --muted: #a39a88;
+  --track: #5b4a2a;
+  --track2: #65522f;
+  --line: #d9b872;
+  --accent: #3fbf80;
+  --accent-text: #0d1a12;
+  color-scheme: dark;
+}
+
+/* ---------- Page ---------- */
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.4;
+}
+main { max-width: 900px; margin: 0 auto; padding: 20px 16px 40px; }
+h1 { margin: 0 0 4px; font-size: 1.7rem; }
+.sub { margin: 0 0 16px; color: var(--muted); }
+.muted { color: var(--muted); }
+.bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+button {
+  font: inherit;
+  font-weight: 600;
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 18px;
+  cursor: pointer;
+  background: var(--accent);
+  color: var(--accent-text);
+}
+button.sec { background: var(--surface); color: var(--text); border: 1px solid var(--muted); }
+button:disabled { opacity: .5; cursor: not-allowed; }
+.banner {
+  display: none;
+  margin: 12px 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 700;
+}
+.commentary {
+  min-height: 2.6em;
+  margin: 10px 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--track);
+  font-style: italic;
+}
+
+/* ---------- Stands ---------- */
+.crowd {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  padding: 0 6px;
+  font-size: 1.3rem;
+  overflow: hidden;
+}
+.crowd span { display: inline-block; }
+.crowd.cheer span { animation: hop .45s ease-in-out infinite alternate; }
+.archers {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  height: 48px;
+  margin: 2px 6px 0;
+}
+.archer { display: block; transition: transform .2s; }
+.archer svg { display: block; width: 36px; height: 46px; overflow: visible; }
+.archer .nock { opacity: 0; }
+.archer.shoot { transform: translateY(-3px); }
+.archer.shoot .nock { opacity: 1; }
+
+/* ---------- Track ---------- */
+.track {
+  position: relative;
+  padding: 10px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--track);
+}
+.lane {
+  position: relative;
+  height: 58px;
+  margin: 4px 0;
+  border-radius: 8px;
+  background: repeating-linear-gradient(90deg, var(--track), var(--track) 40px, var(--track2) 40px, var(--track2) 80px);
+  overflow: hidden;
+}
+.lane .num {
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: .8rem;
+  font-weight: 700;
+  opacity: .7;
+}
+.lane .finish {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  background: repeating-linear-gradient(0deg, #000 0 6px, #fff 6px 12px);
+}
+
+/* ---------- Horses ---------- */
+.horse {
+  position: absolute;
+  top: 50%;
+  left: 24px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  will-change: left;
+}
+.horse .tag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  max-width: 68px;
+  padding: 1px 6px;
+  border-radius: 99px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: .6rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--c);
+}
+.horse.dead .tag { opacity: .55; text-decoration: line-through; }
+.horse.gas .sprite { filter: drop-shadow(0 0 5px rgba(154, 205, 50, .9)); }
+.horse.hurt .sprite { filter: saturate(.4) brightness(.8); }
+.sprite { display: block; }
+.sprite svg { display: block; width: 84px; height: 56px; overflow: visible; }
+.skull {
+  display: flex;
+  width: 84px;
+  height: 56px;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+}
+.racing .horse .sprite { animation: gallop .2s ease-in-out infinite alternate; }
+.racing .horse.done .sprite { animation: none; }
+.racing .horse:not(.done) .thigh { animation: swing .42s ease-in-out infinite; }
+.racing .horse:not(.done) .shin.front { animation: bend-front .42s ease-in-out infinite; }
+.racing .horse:not(.done) .shin.hind { animation: bend-hind .42s ease-in-out infinite; }
+
+/* ---------- Effects ---------- */
+.fx { position: absolute; pointer-events: none; white-space: nowrap; }
+.arrow, .bomb {
+  position: absolute;
+  left: 0;
+  top: 0;
+  line-height: 0;
+  pointer-events: none;
+}
+.arrow { z-index: 5; transform-origin: 5px 34px; }
+.bomb { z-index: 6; }
+.arrow svg, .bomb svg { display: block; }
+.bomb .spark { animation: blink .22s infinite alternate; }
+.bomb-shadow {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 4;
+  width: 44px;
+  height: 12px;
+  margin: -6px 0 0 -22px;
+  border-radius: 50%;
+  background: #000;
+  pointer-events: none;
+}
+.shake main { animation: shake .4s; }
+
+/* ---------- Results ---------- */
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
+.card { padding: 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--track); }
+.card.wide { grid-column: 1 / -1; }
+.card h2 { margin: 0 0 8px; font-size: 1.05rem; }
+ol, ul { margin: 0; padding-left: 1.3rem; }
+li { margin: 3px 0; }
+@media (max-width: 640px) {
+  .grid { grid-template-columns: 1fr; }
+}
+
+/* ---------- Animations ---------- */
+@keyframes gallop { from { transform: translateY(0) rotate(0); } to { transform: translateY(-4px) rotate(-3deg); } }
+@keyframes swing { 0%, 100% { transform: rotate(-38deg); } 50% { transform: rotate(38deg); } }
+@keyframes bend-front { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(60deg); } }
+@keyframes bend-hind { 0%, 100% { transform: rotate(60deg); } 50% { transform: rotate(0); } }
+@keyframes hop { to { transform: translateY(-9px) rotate(8deg); } }
+@keyframes blink { to { opacity: .25; } }
+@keyframes shake {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-6px, 3px); }
+  40% { transform: translate(5px, -4px); }
+  60% { transform: translate(-4px, -2px); }
+  80% { transform: translate(3px, 3px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .shake main,
+  .crowd.cheer span { animation: none; }
+  .racing .horse .sprite,
+  .racing .horse .thigh,
+  .racing .horse .shin { animation: none !important; }
+}
+</style>
+</head>
+<body>
+<main>
+  <h1>🏇 Corsa dei Cavalli</h1>
+  <p class="sub"><span id="count"></span> cavalli casuali, uno per ciascuno di voi, un solo vincitore. Premi “Via!” e guarda la gara.</p>
+  <div class="bar">
+    <button id="go">Via!</button>
+    <button id="again" class="sec">Nuovi cavalli</button>
+    <button id="mute" class="sec" aria-pressed="false">🔊 Audio</button>
+  </div>
+  <div class="banner" id="banner"></div>
+  <div class="commentary" id="commentary" aria-live="polite"></div>
+  <div class="crowd" id="crowd"></div>
+  <div class="archers" id="archers"></div>
+  <div class="track" id="track"></div>
+  <div class="grid">
+    <div class="card">
+      <h2>Classifica</h2>
+      <ol id="rank"><li class="muted">In attesa della partenza…</li></ol>
+    </div>
+    <div class="card">
+      <h2>Vittorie totali</h2>
+      <ul id="wins"><li class="muted">Nessuna gara ancora.</li></ul>
+    </div>
+    <div class="card wide">
+      <h2>⏱️ Migliori tempi</h2>
+      <ol id="best"><li class="muted">Nessun tempo registrato.</li></ol>
+    </div>
+  </div>
+</main>
+<script>
+"use strict";
+
+/* ================= Configuration ================= */
+
+const SPEED = 3.6;   // lower = longer race (about 25 s)
+const HORSES = 9;    // horses per race (max NAMES.length)
+const ARCHERS = 7;
+const CROWD_SIZE = 14;
+const BEST_TIMES = 5;
+
+// Rates marked "/s" are chances per second; zones are track percentages.
+const EVENTS = {
+  speedChange: 4.8,   // /s per horse: how often a horse changes pace
+  neigh: 0.15,        // /s
+  fart: 0.035,        // /s per horse
+  volley: { firstAt: [3000, 12000], max: 3, rate: 0.04, arrows: 14, aimed: 0.45 },
+  arrowKill: { max: [1, 2], chance: 0.7, minAlive: 6 },
+  wound: { duration: 1.8, slowdown: 0.35 },
+  bomb: { firstAt: [5000, 15000], max: 2, rate: 0.02, minTargets: 4, zone: [5, 82] },
+  slip: { after: 2000, max: 3, rate: 0.12, minTargets: 3, zone: [5, 85] },
+  poop: { max: 8, rate: 0.02, zone: [3, 95], quiet: 2500 },
+};
+
+const NAMES = [
+  "Secretariat", "Frankel", "Seabiscuit", "Man o’ War", "Phar Lap", "Black Caviar", "Winx",
+  "American Pharoah", "Enable", "Red Rum", "Shergar", "Kauto Star", "Tiger Roll", "Golden Horn",
+  "Nearco", "Ribot", "Varenne", "Dancing Brave", "Sea the Stars", "Galileo", "Arkle", "Cigar",
+  "Zenyatta", "Justify", "Makybe Diva", "Mill Reef", "Tulloch", "Dubai Millennium",
+];
+const COLORS = ["#c0392b", "#2471a3", "#1e8449", "#b9770e", "#7d3c98", "#17808f", "#d35400", "#566573", "#a93a74"];
+const COATS = [
+  { base: "#8a4b2a", shadow: "#5e2f19", mane: "#241510" },
+  { base: "#1d1d20", shadow: "#0b0b0c", mane: "#0a0a0b" },
+  { base: "#b4632a", shadow: "#8a4818", mane: "#8a4818" },
+  { base: "#cfcfd3", shadow: "#9e9ea6", mane: "#8d8d94" },
+  { base: "#d8b06a", shadow: "#a98238", mane: "#f2e6c4" },
+  { base: "#6a4a36", shadow: "#3d2a1c", mane: "#1f150e" },
+  { base: "#a98259", shadow: "#76563a", mane: "#3b2a1c" },
+  { base: "#c07a3e", shadow: "#8f561f", mane: "#5b3414" },
+  { base: "#4b3b34", shadow: "#241b17", mane: "#150f0c" },
+];
+const FACES = ["🙋", "🤩", "😮", "👏", "📣", "🥳", "😱", "🙌", "🤣", "🎉", "🧑‍🦱", "👨‍🦳"];
+
+const FARTS = [
+  {
+    duration: 0.9, mult: 1.4, size: "1.2rem", grow: 1.5, icon: "💨",
+    words: ["pff", "fft", "pfft", "puf"],
+    say: name => `${name} lascia sfuggire una scoreggetta e guadagna qualche metro!`,
+  },
+  {
+    duration: 1.3, mult: 1.9, size: "1.3rem", grow: 1.8, icon: "💨💨",
+    words: ["PRRT!", "BRAP!", "POOT!", "PFFF!"],
+    say: name => `${name} molla una scoreggia e parte come un razzo!`,
+  },
+  {
+    duration: 2.2, mult: 2.8, size: "1.8rem", grow: 2.5, icon: "💨💨💨",
+    words: ["BRAAAAAP!", "PRRRAAAP!", "BOOOOM!"],
+    say: name => `SCOREGGIONE! ${name} scatena una tempesta e schizza in avanti come un missile!`,
+  },
+];
+const SLIP_LINES = [
+  name => `${name} scivola su una buccia di banana e finisce a gambe all'aria!`,
+  name => `${name} mette lo zoccolo su una buccia di banana: che scivolone!`,
+  name => `${name} perde l'equilibrio e rovina a terra, zoccoli al cielo!`,
+];
+const POOP_LINES = [
+  name => `${name} non si trattiene e lascia un regalino sulla pista!`,
+  name => `Plop! ${name} semina la pista!`,
+  name => `${name} fa i suoi bisogni al galoppo!`,
+];
+
+/* ================= Artwork ================= */
+
+const ARCHER_SVG = `<svg viewBox="0 0 48 48">
+  <path d="M15 20H27V39H15Z" fill="#5b4636"/>
+  <path d="M16 39H20V47H16ZM22 39H26V47H22Z" fill="#3a2c22"/>
+  <circle cx="21" cy="13" r="6" fill="#e0b08c"/>
+  <path d="M14 14A7 7 0 0 1 28 14L28 11 21 4 14 11Z" fill="#2f6b3a"/>
+  <g transform="rotate(-38 24 24)">
+    <path d="M33 2Q47 22 33 42" stroke="#7a4a1e" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+    <path d="M33 2L33 42" stroke="#ddd" stroke-width=".9"/>
+    <g class="nock">
+      <path d="M26 22H46" stroke="#8a5a2b" stroke-width="1.6"/>
+      <path d="M48 22L43 19.5V24.5Z" fill="#c9ccd1"/>
+    </g>
+    <path d="M24 24L34 22" stroke="#e0b08c" stroke-width="2.6" stroke-linecap="round"/>
+  </g>
+</svg>`;
+
+const ARROW_SVG = `<svg width="10" height="34" viewBox="0 0 10 34">
+  <path d="M5 4V30" stroke="#8a5a2b" stroke-width="1.6"/>
+  <path d="M5 34L2 27H8Z" fill="#c9ccd1"/>
+  <path d="M5 3L1 0M5 3L9 0M5 7L1 4M5 7L9 4" stroke="#d94a3a" stroke-width="1.4" stroke-linecap="round"/>
+</svg>`;
+
+const BOMB_SVG = `<svg width="38" height="46" viewBox="0 0 38 46">
+  <circle cx="19" cy="29" r="15" fill="#7b3fa0"/>
+  <ellipse cx="13" cy="22" rx="5" ry="3" fill="#fff" opacity=".28" transform="rotate(-30 13 22)"/>
+  <rect x="15.5" y="9" width="7" height="7" rx="1.5" fill="#5a2c78"/>
+  <path d="M19 9Q22 3 30 4" stroke="#a9742c" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <g class="spark">
+    <circle cx="31" cy="4" r="4" fill="#ffd23f"/>
+    <circle cx="31" cy="4" r="1.8" fill="#ff7a1a"/>
+  </g>
+  <circle cx="13.5" cy="29" r="3.4" fill="#fff"/>
+  <circle cx="24.5" cy="29" r="3.4" fill="#fff"/>
+  <circle cx="14.4" cy="30" r="1.6" fill="#222"/>
+  <circle cx="25.4" cy="30" r="1.6" fill="#222"/>
+  <path d="M15 36Q19 40 23 36" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+  <circle cx="9" cy="34" r="2.2" fill="#ff8fb3" opacity=".8"/>
+  <circle cx="29" cy="34" r="2.2" fill="#ff8fb3" opacity=".8"/>
+</svg>`;
+
+const SKULL_HTML = '<span class="skull">💀</span>';
+
+// A leg is a thigh with a shin hinged at the knee; CSS animates both.
+function legSVG(x, y, kind, delay, sock, far, coat) {
+  const shade = far ? ";filter:brightness(.72)" : "";
+  return `<g class="thigh ${kind}" style="transform-origin:${x}px ${y}px;animation-delay:${delay}s${shade}">`
+    + `<path d="M${x - 4.5} ${y}L${x + 4.5} ${y}L${x + 3.2} ${y + 16}L${x - 3.2} ${y + 16}Z" fill="${coat.base}"/>`
+    + `<g class="shin ${kind}" style="transform-origin:${x}px ${y + 16}px;animation-delay:${delay}s">`
+    + `<path d="M${x - 3.2} ${y + 15}L${x + 3.2} ${y + 15}L${x + 2.2} ${y + 31}L${x - 2.2} ${y + 31}Z" fill="${sock ? "#f3f3f3" : coat.base}"/>`
+    + `<path d="M${x - 2.8} ${y + 31}L${x + 2.8} ${y + 31}L${x + 3.6} ${y + 34}L${x - 2.8} ${y + 34}Z" fill="#26211d"/>`
+    + "</g></g>";
+}
+
+function horseSVG(silk, coat) {
+  const blaze = Math.random() < 0.5;
+  const socks = [0, 1, 2, 3].map(() => Math.random() < 0.3);
+  return '<svg viewBox="0 0 130 86" aria-hidden="true">'
+    // far legs, behind the body
+    + legSVG(36, 46, "hind", 0, socks[0], true, coat)
+    + legSVG(82, 46, "front", -0.21, socks[1], true, coat)
+    // tail, body, belly shadow, back highlight
+    + `<path d="M25 30C14 30 6 40 4 58C5 62 8 60 9 56C12 46 18 40 27 38Z" fill="${coat.mane}"/>`
+    + `<path d="M26 30C34 22 66 22 84 28C92 31 94 40 88 47C80 55 44 56 30 49C21 44 20 35 26 30Z" fill="${coat.base}"/>`
+    + `<path d="M28 44C40 54 82 54 90 44L90 47C80 56 40 57 28 48Z" fill="${coat.shadow}" opacity=".55"/>`
+    + '<path d="M32 28C46 22 70 22 84 29C70 26 48 26 32 32Z" fill="#fff" opacity=".12"/>'
+    // neck, head, blaze, ear, mane
+    + `<path d="M80 28C86 16 94 9 102 6L110 15C101 19 97 27 92 40L86 44Z" fill="${coat.base}"/>`
+    + `<path d="M100 7C108 4 114 8 119 16C124 22 127 27 125 31C123 34 118 33 114 30C110 27 106 22 103 20C100 17 98 11 100 7Z" fill="${coat.base}"/>`
+    + (blaze ? '<path d="M106 8C112 11 118 18 123 26L121 27C115 20 109 14 104 10Z" fill="#fff" opacity=".9"/>' : "")
+    + `<path d="M101 7L100 0L106 5Z" fill="${coat.base}"/>`
+    + `<path d="M99 5C92 8 86 14 80 26L84 28C88 20 93 14 100 10Z" fill="${coat.mane}"/>`
+    // eye, nostril
+    + '<circle cx="107" cy="11.5" r="1.7" fill="#14110f"/>'
+    + '<circle cx="107.5" cy="11" r=".5" fill="#fff"/>'
+    + '<ellipse cx="123" cy="29" rx="1.3" ry="1" fill="#14110f"/>'
+    // near legs
+    + legSVG(44, 48, "hind", -0.07, socks[2], false, coat)
+    + legSVG(90, 46, "front", -0.28, socks[3], false, coat)
+    // jockey: silks, arm, breeches, boot, face, cap
+    + `<path d="M52 24C58 16 68 14 74 18L72 25C66 23 60 25 56 29Z" fill="${silk}"/>`
+    + '<path d="M72 19L91 25" stroke="#e0b08c" stroke-width="2.2" stroke-linecap="round" fill="none"/>'
+    + '<path d="M59 26L66 36L62 41L56 31Z" fill="#f2f2f2"/>'
+    + '<path d="M59 38L64 38L63 45L58 45Z" fill="#2a1a10"/>'
+    + '<circle cx="76" cy="14" r="4" fill="#e0b08c"/>'
+    + `<path d="M71.4 13.6A4.6 4.6 0 0 1 80.6 13.6L78.5 14.6L72 14.6Z" fill="${silk}" stroke="#0003" stroke-width=".4"/>`
+    + "</svg>";
+}
+
+/* ================= State ================= */
+
+const ui = {};
+["go", "again", "mute", "count", "banner", "commentary", "crowd", "archers", "track", "rank", "wins", "best"]
+  .forEach(id => { ui[id] = document.getElementById(id); });
+
+const START_X = 24; // px from the lane's left edge
+const wins = {};
+const bests = [];
+let horses = [];
+let race = null;   // per-race state, see startRace()
+let running = false;
+let raf = null;
+const timers = new Set(); // pending race timeouts/intervals, cleared on reset
+
+/* ================= Helpers ================= */
+
+const rand = (min, max) => min + Math.random() * (max - min);
+const randInt = (min, max) => min + Math.floor(Math.random() * (max - min + 1));
+const pick = list => list[Math.floor(Math.random() * list.length)];
+const inZone = (h, [from, to]) => h.pos > from && h.pos < to;
+
+function shuffle(list) {
+  const copy = [...list];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function addElement(parent, className, html) {
+  const el = document.createElement("span");
+  el.className = className;
+  el.innerHTML = html;
+  parent.appendChild(el);
+  return el;
+}
+
+function fx(text, style) {
+  const el = document.createElement("span");
+  el.className = "fx";
+  el.textContent = text;
+  Object.assign(el.style, style);
+  return el;
+}
+
+function playAndRemove(el, keyframes, options) {
+  el.animate(keyframes, Object.assign({ fill: "forwards" }, options)).onfinish = () => el.remove();
+}
+
+function floatText(lane, text, left, top, fontSize, rise) {
+  const el = fx(text, { left: left + "px", top, fontSize, fontWeight: 700, color: "var(--text)" });
+  lane.appendChild(el);
+  playAndRemove(el, [
+    { transform: "translateY(0)", opacity: 1 },
+    { transform: `translateY(-${rise}px)`, opacity: 0 },
+  ], { duration: 1000, easing: "ease" });
+}
+
+// setTimeout/setInterval that are cancelled by clearEffects()
+function later(fn, ms) {
+  const id = setTimeout(() => {
+    timers.delete(id);
+    fn();
+  }, ms);
+  timers.add(id);
+}
+
+function every(fn, ms) {
+  const id = setInterval(fn, ms);
+  timers.add(id);
+  return id;
+}
+
+// Stops leftover arrows, bombs and timers so they can't hit the next race.
+function clearEffects() {
+  timers.forEach(id => clearTimeout(id)); // also clears intervals: they share one id pool
+  timers.clear();
+  ui.track.querySelectorAll(".arrow, .bomb, .bomb-shadow, .fx").forEach(el => el.remove());
+}
+
+function shakeScreen() {
+  document.body.classList.add("shake");
+  setTimeout(() => document.body.classList.remove("shake"), 450);
+}
+
+/* ================= Setup ================= */
+
+function buildCrowd() {
+  ui.crowd.innerHTML = Array.from({ length: CROWD_SIZE }, (_, i) =>
+    `<span style="animation-delay:${(i % 5) / 10}s">${FACES[i % FACES.length]}</span>`
+  ).join("");
+}
+
+function buildArchers() {
+  ui.archers.innerHTML = Array.from({ length: ARCHERS }, () => `<span class="archer">${ARCHER_SVG}</span>`).join("");
+}
+
+function cheer(on) {
+  ui.crowd.classList.toggle("cheer", on);
+}
+
+function createHorse(name, index, coat) {
+  const silk = COLORS[index % COLORS.length];
+  const svg = horseSVG(silk, coat);
+  const lane = document.createElement("div");
+  lane.className = "lane";
+  lane.innerHTML = `<span class="num">${index + 1}</span><div class="finish"></div>`
+    + `<div class="horse" style="--c:${silk}"><span class="sprite">${svg}</span><span class="tag">${name}</span></div>`;
+  ui.track.appendChild(lane);
+  const el = lane.querySelector(".horse");
+  return { name, lane, el, sprite: el.querySelector(".sprite"), svg, base: rand(0.85, 1.15), pos: 0, done: false };
+}
+
+function resetHorse(h) {
+  Object.assign(h, {
+    pos: 0, speed: h.base, done: false, dead: false, doomed: false,
+    boost: 0, boostMult: 1, slow: 0, slipTime: 0, slipAnim: null,
+  });
+  h.el.classList.remove("hurt", "dead", "done", "gas");
+  h.sprite.innerHTML = h.svg;
+  h.sprite.style.animationDelay = -rand(0, 0.2) + "s";
+  h.el.style.left = START_X + "px";
+}
+
+function prepareRace() {
+  cancelAnimationFrame(raf);
+  clearEffects();
+  running = false;
+  ui.go.disabled = false;
+  ui.banner.style.display = "none";
+  sfx.stop();
+  if (window.speechSynthesis) speechSynthesis.cancel();
+  ui.track.classList.remove("racing");
+  buildCrowd();
+  buildArchers();
+  cheer(false);
+  ui.commentary.textContent = "🎙️ La telecronaca inizierà alla partenza…";
+  const coats = shuffle(COATS);
+  ui.track.innerHTML = "";
+  horses = shuffle(NAMES).slice(0, HORSES).map((name, i) => createHorse(name, i, coats[i % coats.length]));
+  ui.rank.innerHTML = '<li class="muted">In attesa della partenza…</li>';
+}
+
+/* ================= Race loop ================= */
+
+function startRace() {
+  if (running) return;
+  clearEffects();
+  running = true;
+  ui.go.disabled = true;
+  ui.banner.style.display = "none";
+  ui.track.classList.add("racing");
+  cheer(true);
+  sfx.start();
+  later(() => sfx.neigh(), 1200);
+  later(() => say(`E partiti! ${horses.length} cavalli scattano dai box!`), 900);
+  horses.forEach(resetHorse);
+
+  const now = performance.now();
+  race = {
+    t0: now,
+    last: now,
+    lastSay: now,
+    order: [],
+    leader: null,
+    halfway: false,
+    homeStretch: false,
+    volleys: 0,
+    volleyAt: rand(...EVENTS.volley.firstAt),
+    bombs: 0,
+    bombAt: rand(...EVENTS.bomb.firstAt),
+    slips: 0,
+    poops: 0,
+    arrowKills: 0,
+    arrowMax: randInt(...EVENTS.arrowKill.max),
+  };
+  raf = requestAnimationFrame(frame);
+}
+
+function frame(t) {
+  // rAF timestamps can predate the performance.now() read in startRace(), so clamp at 0
+  const dt = Math.max(0, Math.min((t - race.last) / 1000, 0.05));
+  const elapsed = t - race.t0;
+  race.last = t;
+
+  if (Math.random() < EVENTS.neigh * dt) sfx.neigh();
+  maybeVolley(elapsed, dt);
+  maybeBombRain(elapsed, dt);
+  maybeSlip(elapsed, dt);
+  horses.forEach(h => updateHorse(h, dt, t));
+
+  const live = horses.filter(h => !h.dead).sort((a, b) => b.pos - a.pos);
+  commentate(live);
+  ui.rank.innerHTML = live.map(h => `<li>${h.name}</li>`).join("") + deadItems("");
+
+  if (horses.some(h => !h.done)) raf = requestAnimationFrame(frame);
+  else finishRace();
+}
+
+function updateHorse(h, dt, t) {
+  if (h.done) return;
+  if (Math.random() < EVENTS.speedChange * dt) h.speed = h.base * rand(0.4, 1.8);
+  h.boost = Math.max(0, h.boost - dt);
+  h.slow = Math.max(0, h.slow - dt);
+  h.slipTime = Math.max(0, h.slipTime - dt);
+  maybeFart(h, dt);
+  maybePoop(h, dt);
+
+  const v = velocity(h);
+  h.pos += v * dt;
+  const maxX = h.lane.clientWidth - h.el.offsetWidth - 8;
+  h.el.style.left = START_X + Math.min(h.pos / 100, 1) * (maxX - START_X) + "px";
+
+  if (h.pos >= 100) {
+    h.done = true;
+    h.el.classList.add("done");
+    // back-date to the moment the line was crossed within this frame
+    h.time = (t - race.t0) / 1000 - (h.pos - 100) / v;
+    race.order.push(h);
+  }
+}
+
+function velocity(h) {
+  return h.speed * SPEED
+    * (h.boost > 0 ? h.boostMult : 1)
+    * (h.slow > 0 ? EVENTS.wound.slowdown : 1)
+    * slipFactor(h);
+}
+
+// Stumble, lie on the back, get up again.
+function slipFactor(h) {
+  const t = h.slipTime;
+  return t > 1.2 ? 0.9 : t > 0.6 ? 0.05 : t > 0 ? 0.5 : 1;
+}
+
+function finishRace() {
+  const order = race.order.sort((a, b) => a.time - b.time);
+  const winner = order[0];
+  const medals = ["🥇 ", "🥈 ", "🥉 "];
+  running = false;
+  ui.go.disabled = false;
+  ui.track.classList.remove("racing");
+  cheer(true);
+  sfx.finish();
+
+  ui.rank.innerHTML = order.map((h, i) => {
+    const gap = i ? ` (+${(h.time - winner.time).toFixed(2)})` : "";
+    return `<li>${medals[i] || ""}${h.name} <span class="muted">${h.time.toFixed(2)} s${gap}</span></li>`;
+  }).join("") + deadItems(" — esploso");
+
+  wins[winner.name] = (wins[winner.name] || 0) + 1;
+  ui.wins.innerHTML = Object.entries(wins)
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, count]) => `<li>${name}: ${count}</li>`)
+    .join("");
+
+  order.forEach(h => bests.push({ name: h.name, time: h.time }));
+  bests.sort((a, b) => a.time - b.time).splice(BEST_TIMES);
+  ui.best.innerHTML = bests.map(b => `<li>${b.name} — ${b.time.toFixed(2)} s</li>`).join("");
+
+  ui.banner.textContent = `🏆 Vince ${winner.name}!`;
+  ui.banner.style.display = "block";
+  const podium = ["Secondo ", "terzo "]
+    .map((label, i) => order[i + 1] && label + order[i + 1].name)
+    .filter(Boolean)
+    .join(", ");
+  const seconds = winner.time.toFixed(2).replace(".", ",");
+  say(`Vince ${winner.name} in ${seconds} secondi! ${podium ? podium + "! " : ""}Che gara, signori!`);
+}
+
+function deadItems(suffix) {
+  return horses.filter(h => h.dead).map(h => `<li class="muted">💀 ${h.name}${suffix}</li>`).join("");
+}
+
+/* ================= Commentary ================= */
+
+function say(text) {
+  ui.commentary.textContent = "🎙️ " + text;
+  if (sfx.isMuted() || !window.speechSynthesis) return;
+  try {
+    speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    const voice = speechSynthesis.getVoices().find(v => v.lang && v.lang.toLowerCase().startsWith("it"));
+    if (voice) utterance.voice = voice;
+    utterance.lang = "it-IT";
+    utterance.rate = 1.1;
+    // let cancel() settle before queueing the next line
+    setTimeout(() => speechSynthesis.speak(utterance), 80);
+  } catch (e) {
+    // speech is a nice-to-have; the text is already on screen
+  }
+}
+
+// Like say(), but also resets the "quiet" timer used to space out commentary.
+function announce(text) {
+  race.lastSay = performance.now();
+  say(text);
+}
+
+function commentate(live) {
+  const [first, second] = live;
+  const quiet = performance.now() - race.lastSay;
+  if (first.pos >= 100) return;
+
+  if (first !== race.leader && quiet > 3000) {
+    if (race.leader) sfx.cheer();
+    announce(race.leader
+      ? `${first.name} passa in testa!`
+      : `${first.name} scatta meglio di tutti e guida il gruppo!`);
+    race.leader = first;
+  } else if (!race.halfway && first.pos > 50 && quiet > 1500) {
+    race.halfway = true;
+    sfx.cheer();
+    announce(`Siamo a metà gara, in testa ${first.name}${second ? `, inseguito da ${second.name}` : ""}!`);
+  } else if (!race.homeStretch && first.pos > 85 && quiet > 1500) {
+    race.homeStretch = true;
+    sfx.cheer();
+    announce(`Ultimo rettilineo! ${first.name} in testa${second ? `, ${second.name} tenta il sorpasso` : ""}!`);
+  }
+}
+
+/* ================= Random events ================= */
+
+// The first event fires at a random time; later ones at a random rate, up to `max`.
+function isDue(count, firstAt, cfg, elapsed, dt) {
+  return count === 0 ? elapsed > firstAt : count < cfg.max && Math.random() < cfg.rate * dt;
+}
+
+function maybeVolley(elapsed, dt) {
+  if (!isDue(race.volleys, race.volleyAt, EVENTS.volley, elapsed, dt)) return;
+  race.volleys++;
+  announce("Attenzione! Gli arcieri scoccano una raffica di frecce!");
+  volley();
+}
+
+function maybeBombRain(elapsed, dt) {
+  const cfg = EVENTS.bomb;
+  if (!isDue(race.bombs, race.bombAt, cfg, elapsed, dt)) return;
+  const targets = horses.filter(h => !h.done && !h.doomed && inZone(h, cfg.zone));
+  if (targets.length < cfg.minTargets) return;
+
+  const h = pick(targets);
+  race.bombs++;
+  h.doomed = true;
+  announce(`Piovono bombe dal cielo! Attenzione, ${h.name}!`);
+  bombRain(h, () => {
+    if (h.done) return sfx.boom();
+    explode(h);
+    say(`Oh no! ${h.name} è esploso! Che tragedia!`);
+  });
+}
+
+function maybeSlip(elapsed, dt) {
+  const cfg = EVENTS.slip;
+  if (race.slips >= cfg.max || elapsed <= cfg.after || Math.random() >= cfg.rate * dt) return;
+  const targets = horses.filter(h => !h.done && !h.doomed && h.slipTime === 0 && inZone(h, cfg.zone));
+  if (targets.length < cfg.minTargets) return;
+
+  const h = pick(targets);
+  race.slips++;
+  slipFall(h);
+  announce(pick(SLIP_LINES)(h.name));
+}
+
+function maybeFart(h, dt) {
+  if (h.boost || Math.random() >= EVENTS.fart * dt) return;
+  const r = Math.random();
+  const level = r < 0.5 ? 0 : r < 0.85 ? 1 : 2;
+  const fart = FARTS[level];
+  h.boost = fart.duration;
+  h.boostMult = fart.mult;
+  puff(h, level);
+  sfx.fart(level);
+  if (level === 2) shakeScreen();
+  announce(fart.say(h.name));
+}
+
+function maybePoop(h, dt) {
+  const cfg = EVENTS.poop;
+  if (race.poops >= cfg.max || h.slipTime > 0 || !inZone(h, cfg.zone) || Math.random() >= cfg.rate * dt) return;
+  race.poops++;
+  poop(h);
+  if (performance.now() - race.lastSay > cfg.quiet) announce(pick(POOP_LINES)(h.name));
+}
+
+/* ================= Arrows ================= */
+
+function volley() {
+  const archers = [...ui.archers.children];
+  const lanes = [...ui.track.querySelectorAll(".lane")];
+  const targets = horses.filter(h => !h.done);
+  const hits = { names: [], killed: false };
+
+  archers.forEach(a => a.classList.add("shoot"));
+  later(() => archers.forEach(a => a.classList.remove("shoot")), 700);
+  sfx.bows();
+
+  for (let n = 0; n < EVENTS.volley.arrows; n++) {
+    later(() => {
+      const track = ui.track.getBoundingClientRect();
+      const bow = pick(archers).getBoundingClientRect();
+      const from = { x: bow.left + bow.width / 2 - track.left, y: bow.top + 8 - track.top };
+      shoot(from, aimArrow(track, targets, lanes), hits);
+    }, n * 45 + rand(0, 250));
+  }
+
+  later(() => {
+    const { names, killed } = hits;
+    if (!names.length || killed) return;
+    say(names.join(" e ") + (names.length > 1 ? " sono stati colpiti dalle frecce!" : " è stato colpito da una freccia!"));
+  }, 1700);
+}
+
+// Some arrows aim at a horse, the rest land at random on the track.
+function aimArrow(track, targets, lanes) {
+  if (targets.length && Math.random() < EVENTS.volley.aimed) {
+    const r = pick(targets).sprite.getBoundingClientRect();
+    return { x: r.left + rand(48, 88) - track.left, y: r.top + r.height * rand(0.35, 0.75) - track.top };
+  }
+  const lane = pick(lanes).getBoundingClientRect();
+  return { x: rand(40, track.width - 40), y: lane.top + lane.height * rand(0.3, 0.7) - track.top };
+}
+
+function shoot(from, to, hits) {
+  const arrow = addElement(ui.track, "arrow", ARROW_SVG);
+  const angle = -Math.atan2(to.x - from.x, to.y - from.y) * 180 / Math.PI;
+  const at = p => `translate(${p.x - 5}px,${p.y - 34}px) rotate(${angle}deg)`;
+  arrow.animate(
+    [{ transform: at(from), opacity: 0.9 }, { transform: at(to), opacity: 1 }],
+    { duration: rand(560, 680), easing: "cubic-bezier(.35,0,.85,.7)", fill: "forwards" }
+  ).onfinish = () => {
+    if (!arrow.isConnected) return;
+    sfx.thunk();
+    hitHorsesAt(to, hits);
+    // stays stuck in the ground for a while, then fades
+    playAndRemove(arrow, [{ transform: at(to), opacity: 1 }, { transform: at(to), opacity: 0 }], { duration: 800, delay: 2500 });
+  };
+}
+
+function hitHorsesAt(point, hits) {
+  const track = ui.track.getBoundingClientRect();
+  const x = track.left + point.x;
+  const y = track.top + point.y;
+  const cfg = EVENTS.arrowKill;
+
+  horses.forEach(h => {
+    if (h.done) return;
+    const r = h.sprite.getBoundingClientRect();
+    if (x <= r.left + 8 || x >= r.right - 6 || y <= r.top + 4 || y >= r.bottom - 4) return;
+
+    const alive = horses.filter(o => !o.dead).length;
+    if (race.arrowKills < race.arrowMax && alive >= cfg.minAlive && Math.random() < cfg.chance) {
+      race.arrowKills++;
+      hits.killed = true;
+      explode(h);
+      say(`${h.name} è stato trafitto dalle frecce!`);
+    } else {
+      wound(h);
+      if (!hits.names.includes(h.name)) hits.names.push(h.name);
+    }
+  });
+}
+
+function wound(h) {
+  const { duration } = EVENTS.wound;
+  h.slow = duration;
+  h.el.classList.add("hurt");
+  later(() => h.el.classList.remove("hurt"), duration * 1000);
+  floatText(h.lane, "🩸 AHI!", h.el.offsetLeft + 10, "8%", ".9rem", 16);
+  sfx.hurt();
+}
+
+/* ================= Bombs ================= */
+
+function bombRain(target, onHit) {
+  const lanes = [...ui.track.querySelectorAll(".lane")];
+  sfx.whistle();
+
+  // decoys land on empty stretches of track
+  for (let i = 0; i < 5; i++) {
+    later(() => {
+      const spot = findEmptySpot(lanes);
+      fallBomb(spot, rand(800, 1050), () => miniBlast(spot.x, spot.y));
+    }, i * 130 + rand(0, 120));
+  }
+
+  later(() => {
+    const track = ui.track.getBoundingClientRect();
+    const r = target.sprite.getBoundingClientRect();
+    const spot = {
+      x: r.left + r.width * 0.55 + 30 - track.left,
+      y: r.top + r.height / 2 - track.top,
+      ground: r.bottom - track.top - 4,
+    };
+    fallBomb(spot, 950, onHit);
+  }, 650);
+}
+
+// Tries a few random spots clear of every horse; settles for the last one tried.
+function findEmptySpot(lanes) {
+  const track = ui.track.getBoundingClientRect();
+  const occupied = horses.filter(h => !h.dead).map(h => ({ lane: h.lane, r: h.sprite.getBoundingClientRect() }));
+  let spot;
+  for (let attempt = 0; attempt < 12; attempt++) {
+    const lane = pick(lanes);
+    const lr = lane.getBoundingClientRect();
+    spot = { x: rand(50, track.width - 50), y: lr.top + lr.height / 2 - track.top, ground: lr.bottom - track.top - 8 };
+    const x = track.left + spot.x;
+    if (!occupied.some(o => o.lane === lane && x > o.r.left - 70 && x < o.r.right + 130)) break;
+  }
+  return spot;
+}
+
+function fallBomb({ x, y, ground }, duration, onLand) {
+  const shadow = addElement(ui.track, "bomb-shadow", "");
+  shadow.animate([
+    { transform: `translate(${x}px,${ground}px) scale(.2)`, opacity: 0.1 },
+    { transform: `translate(${x}px,${ground}px) scale(1.2)`, opacity: 0.55 },
+  ], { duration, easing: "ease-in", fill: "forwards" });
+
+  const bomb = addElement(ui.track, "bomb", BOMB_SVG);
+  bomb.animate([
+    { transform: `translate(${x - 19}px,-130px) rotate(-25deg)` },
+    { transform: `translate(${x - 19}px,${y - 30}px) rotate(25deg)` },
+  ], { duration, easing: "cubic-bezier(.5,0,.9,.6)", fill: "forwards" }).onfinish = () => {
+    if (!bomb.isConnected) return;
+    shadow.remove();
+    bomb.remove();
+    onLand();
+  };
+}
+
+function miniBlast(x, y) {
+  const blast = fx("💥", { left: "0", top: "0", zIndex: 6, fontSize: "1.6rem", lineHeight: 1 });
+  const at = scale => `translate(${x - 14}px,${y - 14}px) scale(${scale})`;
+  ui.track.appendChild(blast);
+  playAndRemove(blast, [{ transform: at(0.4), opacity: 1 }, { transform: at(1.5), opacity: 0 }], { duration: 650, easing: "ease-out" });
+  sfx.thunk();
+}
+
+function explode(h) {
+  if (h.slipAnim) h.slipAnim.cancel();
+  h.slipAnim = null;
+  h.slipTime = 0;
+  h.dead = true;
+  h.done = true;
+
+  const blast = fx("💥", { left: Math.max(0, h.el.offsetLeft + 20) + "px", top: "50%", fontSize: "2.2rem" });
+  h.lane.appendChild(blast);
+  playAndRemove(blast, [
+    { transform: "translateY(-50%) scale(.4)", opacity: 1 },
+    { transform: "translateY(-50%) scale(1.5)", opacity: 1, offset: 0.3 },
+    { transform: "translateY(-50%) scale(1.8)", opacity: 0 },
+  ], { duration: 1200, easing: "ease-out" });
+
+  h.el.classList.add("dead");
+  h.sprite.innerHTML = SKULL_HTML;
+  sfx.boom();
+  shakeScreen();
+}
+
+/* ================= Banana slip ================= */
+
+const SLIP_ROLL = [
+  { transform: "translateY(0) rotate(0deg)", offset: 0 },
+  { transform: "translateY(-10px) rotate(-25deg)", offset: 0.12 },
+  { transform: "translateY(-6px) rotate(-110deg)", offset: 0.28 },
+  { transform: "translateY(4px) rotate(-180deg)", offset: 0.4 },
+  { transform: "translateY(4px) rotate(-187deg)", offset: 0.5 },
+  { transform: "translateY(4px) rotate(-173deg)", offset: 0.6 },
+  { transform: "translateY(4px) rotate(-180deg)", offset: 0.72 },
+  { transform: "translateY(-6px) rotate(-270deg)", offset: 0.88 },
+  { transform: "translateY(0) rotate(-360deg)", offset: 1 },
+];
+
+function slipFall(h) {
+  h.slipTime = 2;
+
+  const peel = fx("🍌", { left: h.el.offsetLeft + 70 + "px", top: "58%", fontSize: "1.3rem", lineHeight: 1 });
+  h.lane.insertBefore(peel, h.lane.firstChild);
+  playAndRemove(peel, [{ opacity: 1 }, { opacity: 1, offset: 0.71 }, { opacity: 0, offset: 0.97 }, { opacity: 0 }], { duration: 3100 });
+
+  const roll = h.sprite.animate(SLIP_ROLL, { duration: 2000, easing: "ease-in-out" });
+  h.slipAnim = roll;
+  roll.onfinish = () => {
+    if (h.slipAnim === roll) h.slipAnim = null;
+  };
+  sfx.slip();
+
+  later(() => {
+    if (h.dead) return;
+    const stars = fx("💫", { left: h.el.offsetLeft + 30 + "px", top: "2px", fontSize: "1.2rem", lineHeight: 1 });
+    h.lane.appendChild(stars);
+    playAndRemove(stars, [
+      { transform: "translateY(0) scale(.7)", opacity: 1 },
+      { transform: "translateY(-6px) scale(1.2)", opacity: 1, offset: 0.6 },
+      { transform: "translateY(-10px) scale(1)", opacity: 0 },
+    ], { duration: 900 });
+  }, 750);
+}
+
+/* ================= Farts and poop ================= */
+
+function puff(h, level) {
+  const fart = FARTS[level];
+  const label = fx(`${fart.icon} ${pick(fart.words)}`, {
+    left: Math.max(0, h.el.offsetLeft - 64 - level * 34) + "px",
+    top: "50%",
+    zIndex: 3,
+    fontSize: fart.size,
+    fontWeight: 700,
+    color: "var(--text)",
+  });
+  h.lane.appendChild(label);
+  playAndRemove(label, [
+    { transform: "translateY(-50%)", opacity: 1 },
+    { transform: `translate(${-30 - level * 20}px,-80%) scale(${fart.grow})`, opacity: 0 },
+  ], { duration: (1.1 + level * 0.4) * 1000, easing: "ease" });
+
+  // trail of clouds behind the horse for the whole boost
+  h.el.classList.add("gas");
+  const clouds = Math.round(fart.duration * 1000 / 90);
+  let count = 0;
+  const timer = every(() => {
+    if (count++ >= clouds || h.dead) {
+      clearInterval(timer);
+      timers.delete(timer);
+      h.el.classList.remove("gas");
+      return;
+    }
+    const cloud = fx("💨", {
+      left: h.el.offsetLeft + 2 + "px",
+      top: rand(32, 66) + "%",
+      zIndex: 2,
+      fontSize: 1.1 + level * 0.55 + "rem",
+      lineHeight: 1,
+    });
+    h.lane.appendChild(cloud);
+    const dx = -34 - level * 22 - rand(0, 22);
+    const dy = -rand(6, 20);
+    playAndRemove(cloud, [
+      { transform: "translate(0,0) scale(.6)", opacity: 0.95 },
+      { transform: `translate(${dx}px,${dy}px) scale(${1.1 + level * 0.5})`, opacity: 0 },
+    ], { duration: 650 + level * 180, easing: "ease-out" });
+  }, 90);
+}
+
+function poop(h) {
+  const x = h.el.offsetLeft;
+  const dropping = fx("💩", { left: x + 2 + "px", top: "52%", fontSize: "1.2rem", lineHeight: 1 });
+  h.lane.insertBefore(dropping, h.el);
+  // drop and squash in the first ~0.4 s, sit for a while, then fade
+  playAndRemove(dropping, [
+    { transform: "translateY(-18px) scale(.6)", opacity: 0 },
+    { transform: "translateY(-4px) scale(1)", opacity: 1, offset: 0.042 },
+    { transform: "translateY(4px) scale(1.15,.8)", opacity: 1, offset: 0.067 },
+    { transform: "translateY(2px) scale(1)", opacity: 1, offset: 0.084 },
+    { transform: "translateY(2px) scale(1)", opacity: 1, offset: 0.8 },
+    { transform: "translateY(2px) scale(1)", opacity: 0, offset: 0.96 },
+    { transform: "translateY(2px) scale(1)", opacity: 0 },
+  ], { duration: 5000 });
+  floatText(h.lane, "PLOP!", Math.max(0, x - 8), "6%", ".8rem", 12);
+  sfx.plop();
+}
+
+/* ================= Sound (Web Audio, all synthesized) ================= */
+
+const sfx = (() => {
+  const VOLUME = 0.8;
+  let ctx = null;
+  let master = null;
+  let noiseBuffer = null;
+  let gallop = null;
+  let gallopDelay = null;
+  let crowd = null;
+  let muted = false;
+  let lastNeigh = 0;
+
+  function ensure() {
+    try {
+      if (!ctx) {
+        ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const comp = ctx.createDynamicsCompressor();
+        comp.threshold.value = -20;
+        comp.knee.value = 20;
+        comp.ratio.value = 8;
+        comp.attack.value = 0.003;
+        comp.release.value = 0.25;
+        master = ctx.createGain();
+        master.gain.value = muted ? 0 : VOLUME;
+        master.connect(comp);
+        comp.connect(ctx.destination);
+        noiseBuffer = makeNoise(4);
+      }
+      if (ctx.state === "suspended") ctx.resume();
+    } catch (e) {
+      ctx = null;
+    }
+    return ctx;
+  }
+
+  // White noise whose tail cross-fades into its head, so it loops without a click.
+  function makeNoise(seconds) {
+    const rate = ctx.sampleRate;
+    const length = rate * seconds;
+    const fade = Math.floor(rate * 0.1);
+    const raw = Float32Array.from({ length: length + fade }, () => Math.random() * 2 - 1);
+    const buffer = ctx.createBuffer(1, length, rate);
+    const data = buffer.getChannelData(0);
+    data.set(raw.subarray(0, length));
+    for (let i = 0; i < fade; i++) {
+      const w = (i / fade) * Math.PI / 2;
+      data[i] = raw[i] * Math.sin(w) + raw[length + i] * Math.cos(w);
+    }
+    return buffer;
+  }
+
+  function noise(loop) {
+    const src = ctx.createBufferSource();
+    src.buffer = noiseBuffer;
+    src.loop = !!loop;
+    return src;
+  }
+
+  function filter(type, frequency, q) {
+    const f = ctx.createBiquadFilter();
+    f.type = type;
+    f.frequency.value = frequency;
+    if (q != null) f.Q.value = q;
+    return f;
+  }
+
+  function band(src, frequency, q, gain = 1) {
+    const f = filter("bandpass", frequency, q);
+    const g = ctx.createGain();
+    g.gain.value = gain;
+    src.connect(f);
+    f.connect(g);
+    return g;
+  }
+
+  // One oscillator gliding between two pitches under an attack/hold/release envelope.
+  function sweep({ type, from, to, glide, peak, attack = 0, hold = 0, release, delay = 0, through }) {
+    const t = ctx.currentTime + delay;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(from, t);
+    osc.frequency.exponentialRampToValueAtTime(to, t + glide);
+    if (attack) {
+      gain.gain.setValueAtTime(0.001, t);
+      gain.gain.linearRampToValueAtTime(peak, t + attack);
+    } else {
+      gain.gain.setValueAtTime(peak, t);
+    }
+    if (hold) gain.gain.setValueAtTime(peak, t + hold);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + release);
+    if (through) {
+      osc.connect(through);
+      through.connect(gain);
+    } else {
+      osc.connect(gain);
+    }
+    gain.connect(master);
+    osc.start(t);
+    osc.stop(t + release + 0.02);
+    return osc;
+  }
+
+  function tone(freq, delay, duration, type, volume) {
+    sweep({ type, from: freq, to: freq, glide: duration, peak: volume, attack: 0.01, release: duration, delay });
+  }
+
+  // Short filtered noise burst, used for hooves, claps and impacts.
+  function burst(frequency, q, volume, length, at) {
+    const src = noise();
+    const g = ctx.createGain();
+    band(src, frequency, q).connect(g);
+    g.gain.setValueAtTime(volume, at);
+    g.gain.exponentialRampToValueAtTime(0.001, at + length);
+    g.connect(master);
+    src.start(at, Math.random() * 3);
+    src.stop(at + length + 0.01);
+  }
+
+  function hoof(volume) {
+    burst(rand(1300, 1800), 1.2, volume * 0.45, 0.06, ctx.currentTime);
+    sweep({ type: "sine", from: 200, to: 90, glide: 0.07, peak: volume * 0.35, release: 0.09 });
+  }
+
+  function startCrowd() {
+    const src = noise(true);
+    const lowpass = filter("lowpass", 2200);
+    const g = ctx.createGain();
+    band(src, 800, 0.5).connect(lowpass);
+    lowpass.connect(g);
+    g.gain.setValueAtTime(0.001, ctx.currentTime);
+    g.gain.linearRampToValueAtTime(0.12, ctx.currentTime + 4);
+    g.connect(master);
+    src.start();
+    crowd = { src, gain: g };
+  }
+
+  function stopAll() {
+    clearInterval(gallop);
+    clearTimeout(gallopDelay);
+    gallop = gallopDelay = null;
+    if (!crowd) return;
+    try {
+      const t = ctx.currentTime;
+      const g = crowd.gain.gain;
+      g.cancelScheduledValues(t);
+      g.setValueAtTime(Math.max(g.value, 0.001), t);
+      g.exponentialRampToValueAtTime(0.001, t + 0.4);
+      crowd.src.stop(t + 0.5);
+    } catch (e) {
+      // already stopped
+    }
+    crowd = null;
+  }
+
+  function applause(seconds) {
+    const t = ctx.currentTime;
+    for (let i = 0; i < seconds * 35; i++) {
+      const offset = rand(0, seconds);
+      const swell = Math.sin(Math.PI * offset / seconds);
+      burst(rand(1800, 4000), 1, 0.1 * swell + 0.01, 0.03, t + offset);
+    }
+  }
+
+  const api = {
+    start() {
+      if (!ensure()) return;
+      stopAll();
+      // starting beeps, then hooves and crowd
+      tone(880, 0, 0.12, "square", 0.08);
+      tone(880, 0.4, 0.12, "square", 0.08);
+      tone(1320, 0.8, 0.35, "square", 0.1);
+      const pattern = [0.8, 0.6, 1, 0];
+      let beat = 0;
+      gallopDelay = setTimeout(() => {
+        gallopDelay = null;
+        if (!ctx) return;
+        startCrowd();
+        gallop = setInterval(() => {
+          const volume = pattern[beat++ % pattern.length];
+          if (!volume) return;
+          hoof(volume);
+          setTimeout(() => { if (gallop) hoof(volume * 0.6); }, rand(0, 70));
+          if (Math.random() < 0.5) setTimeout(() => { if (gallop) hoof(volume * 0.5); }, rand(0, 90));
+        }, 120);
+      }, 800);
+    },
+
+    finish() {
+      if (!ctx) return;
+      stopAll();
+      [523, 659, 784, 1047].forEach((freq, i) => tone(freq, i * 0.14, 0.4, "triangle", 0.16));
+      tone(1047, 0.6, 0.9, "triangle", 0.16);
+      applause(2.5);
+      api.cheer();
+    },
+
+    stop() {
+      if (ctx) stopAll();
+    },
+
+    neigh() {
+      if (!ctx) return;
+      const now = performance.now();
+      if (now - lastNeigh < 3000) return;
+      lastNeigh = now;
+
+      // pitch contour [time, Hz], sampled with a little jitter
+      const t = ctx.currentTime;
+      const D = 1.5;
+      const contour = [[0, 380], [0.12, 620], [0.35, 950], [0.55, 820], [0.9, 520], [1.2, 330], [1.5, 260]];
+      const curve = new Float32Array(60);
+      for (let i = 0; i < curve.length; i++) {
+        const x = i / (curve.length - 1) * D;
+        let j = 0;
+        while (j < contour.length - 2 && x > contour[j + 1][0]) j++;
+        const [ta, fa] = contour[j];
+        const [tb, fb] = contour[j + 1];
+        const u = Math.min(1, Math.max(0, (x - ta) / (tb - ta)));
+        curve[i] = (fa + (fb - fa) * u) * (1 + (Math.random() - 0.5) * 0.05);
+      }
+
+      const saw = ctx.createOscillator();
+      const sub = ctx.createOscillator();
+      const subGain = ctx.createGain();
+      const am = ctx.createGain();
+      const lfo = ctx.createOscillator();
+      const lfoGain = ctx.createGain();
+      const mix = ctx.createGain();
+      const lowpass = filter("lowpass", 3500);
+      const out = ctx.createGain();
+
+      saw.type = "sawtooth";
+      saw.frequency.setValueCurveAtTime(curve, t, D);
+      sub.type = "triangle";
+      sub.frequency.setValueCurveAtTime(curve.map(v => v * 0.5), t, D);
+      subGain.gain.value = 0.5;
+      // 14 Hz tremolo gives the whinny its flutter
+      am.gain.value = 0.7;
+      lfo.frequency.value = 14;
+      lfoGain.gain.value = 0.25;
+      lfo.connect(lfoGain);
+      lfoGain.connect(am.gain);
+      saw.connect(am);
+      sub.connect(subGain);
+      subGain.connect(am);
+
+      band(am, 900, 1.2).connect(mix);
+      band(am, 2200, 2, 0.45).connect(mix);
+      const breath = noise(true);
+      band(breath, 3000, 1, 0.03).connect(mix);
+      mix.connect(lowpass);
+      lowpass.connect(out);
+
+      out.gain.setValueAtTime(0.001, t);
+      out.gain.linearRampToValueAtTime(0.16, t + 0.06);
+      out.gain.linearRampToValueAtTime(0.13, t + 1);
+      out.gain.exponentialRampToValueAtTime(0.001, t + D);
+      out.connect(master);
+      [saw, sub, lfo, breath].forEach(node => {
+        node.start(t);
+        node.stop(t + D + 0.05);
+      });
+    },
+
+    fart(level = 1) {
+      if (!ctx) return;
+      const presets = [
+        { length: rand(0.18, 0.28), freq: rand(260, 320), peak: 0.16, cutoff: 2400, flutter: 55 },
+        { length: rand(0.4, 0.9), freq: rand(130, 190), peak: 0.3, cutoff: 1100, flutter: rand(35, 60) },
+        { length: rand(1.1, 1.5), freq: rand(70, 95), peak: 0.5, cutoff: 850, flutter: rand(22, 32) },
+      ];
+      const { length, freq, peak, cutoff, flutter } = presets[level];
+      const t = ctx.currentTime;
+      const saw = ctx.createOscillator();
+      const square = ctx.createOscillator();
+      const lfo = ctx.createOscillator();
+      const sawDepth = ctx.createGain();
+      const squareDepth = ctx.createGain();
+      const lowpass = filter("lowpass", cutoff, 2);
+      const out = ctx.createGain();
+
+      saw.type = "sawtooth";
+      saw.frequency.setValueAtTime(freq, t);
+      saw.frequency.exponentialRampToValueAtTime(freq * 0.4, t + length);
+      square.type = "square";
+      square.frequency.setValueAtTime(freq * 2, t);
+      square.frequency.exponentialRampToValueAtTime(freq * 0.8, t + length);
+      // square-wave LFO on pitch makes the "flapping" texture
+      lfo.type = "square";
+      lfo.frequency.value = flutter;
+      sawDepth.gain.value = freq * 0.25;
+      squareDepth.gain.value = freq * 0.5;
+      lfo.connect(sawDepth);
+      lfo.connect(squareDepth);
+      sawDepth.connect(saw.frequency);
+      squareDepth.connect(square.frequency);
+
+      out.gain.setValueAtTime(0.001, t);
+      out.gain.linearRampToValueAtTime(peak, t + 0.03);
+      out.gain.setValueAtTime(peak, t + length * 0.8);
+      out.gain.exponentialRampToValueAtTime(0.001, t + length);
+      saw.connect(lowpass);
+      square.connect(lowpass);
+      lowpass.connect(out);
+      out.connect(master);
+      [saw, square, lfo].forEach(node => {
+        node.start(t);
+        node.stop(t + length + 0.02);
+      });
+    },
+
+    plop() {
+      if (!ctx) return;
+      sweep({ type: "sine", from: 320, to: 70, glide: 0.16, peak: 0.18, attack: 0.01, release: 0.2 });
+    },
+
+    slip() {
+      if (!ctx) return;
+      sweep({ type: "triangle", from: 1500, to: 260, glide: 0.35, peak: 0.12, attack: 0.03, release: 0.38 });
+      setTimeout(() => api.thunk(), 420);
+    },
+
+    boom() {
+      if (!ctx) return;
+      const t = ctx.currentTime;
+      const rumble = noise(true);
+      const lowpass = ctx.createBiquadFilter();
+      const g = ctx.createGain();
+      lowpass.type = "lowpass";
+      lowpass.frequency.setValueAtTime(5000, t);
+      lowpass.frequency.exponentialRampToValueAtTime(150, t + 1.3);
+      g.gain.setValueAtTime(0.8, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 1.5);
+      rumble.connect(lowpass);
+      lowpass.connect(g);
+      g.connect(master);
+      rumble.start(t);
+      rumble.stop(t + 1.55);
+      sweep({ type: "sine", from: 220, to: 40, glide: 0.8, peak: 0.9, release: 1 });
+      sweep({ type: "sawtooth", from: 900, to: 180, glide: 0.45, peak: 0.07, attack: 0.03, release: 0.5 });
+    },
+
+    whistle() {
+      if (!ctx) return;
+      const t = ctx.currentTime;
+      const osc = sweep({ type: "sine", from: 1900, to: 420, glide: 0.95, peak: 0.1, attack: 0.08, hold: 0.8, release: 0.95 });
+      // 9 Hz vibrato
+      const lfo = ctx.createOscillator();
+      const depth = ctx.createGain();
+      lfo.frequency.value = 9;
+      depth.gain.value = 40;
+      lfo.connect(depth);
+      depth.connect(osc.frequency);
+      lfo.start(t);
+      lfo.stop(t + 1);
+    },
+
+    bows() {
+      if (!ctx) return;
+      for (let i = 0; i < ARCHERS; i++) {
+        sweep({
+          type: "triangle", from: rand(420, 500), to: 140, glide: 0.14,
+          peak: 0.12, attack: 0.005, release: 0.16, delay: rand(0, 0.25),
+          through: filter("lowpass", 1500),
+        });
+      }
+      // whoosh of the arrows leaving
+      const t = ctx.currentTime + 0.15;
+      const src = noise(true);
+      const bandpass = filter("bandpass", 2500, 0.8);
+      const g = ctx.createGain();
+      bandpass.frequency.setValueAtTime(2500, t);
+      bandpass.frequency.exponentialRampToValueAtTime(700, t + 0.7);
+      g.gain.setValueAtTime(0.001, t);
+      g.gain.linearRampToValueAtTime(0.16, t + 0.1);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+      src.connect(bandpass);
+      bandpass.connect(g);
+      g.connect(master);
+      src.start(t);
+      src.stop(t + 0.85);
+    },
+
+    thunk() {
+      if (!ctx) return;
+      sweep({ type: "sine", from: 200, to: 70, glide: 0.07, peak: 0.22, release: 0.09 });
+      const t = ctx.currentTime;
+      const src = noise();
+      const lowpass = filter("lowpass", 900);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.12, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+      src.connect(lowpass);
+      lowpass.connect(g);
+      g.connect(master);
+      src.start(t, Math.random() * 3);
+      src.stop(t + 0.05);
+    },
+
+    hurt() {
+      if (!ctx) return;
+      sweep({
+        type: "sawtooth", from: 750, to: 260, glide: 0.3, peak: 0.12, attack: 0.03, release: 0.32,
+        through: filter("bandpass", 1000, 1.5),
+      });
+    },
+
+    cheer() {
+      if (!ctx) return;
+      const t = ctx.currentTime;
+      const src = noise(true);
+      const g = ctx.createGain();
+      [[650, 4, 1], [1100, 5, 0.7], [2400, 3, 0.25]].forEach(([freq, q, gain]) => band(src, freq, q, gain).connect(g));
+      g.gain.setValueAtTime(0.001, t);
+      g.gain.linearRampToValueAtTime(0.5, t + 0.35);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 1.5);
+      g.connect(master);
+      src.start(t);
+      src.stop(t + 1.6);
+    },
+
+    isMuted() {
+      return muted;
+    },
+
+    toggle() {
+      muted = !muted;
+      if (master) master.gain.value = muted ? 0 : VOLUME;
+      if (muted && window.speechSynthesis) speechSynthesis.cancel();
+      return muted;
+    },
+  };
+  return api;
+})();
+
+/* ================= Init ================= */
+
+ui.mute.onclick = () => {
+  const muted = sfx.toggle();
+  ui.mute.textContent = muted ? "🔇 Audio" : "🔊 Audio";
+  ui.mute.setAttribute("aria-pressed", String(muted));
+};
+ui.go.onclick = startRace;
+ui.again.onclick = prepareRace;
+ui.count.textContent = Math.min(HORSES, NAMES.length);
+prepareRace();
+</script>
+</body>
+</html>
